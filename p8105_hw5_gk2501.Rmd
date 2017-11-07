@@ -11,20 +11,20 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r downloading packages}
 library(tidyverse)
+library(janitor)
+library(dplyr)
 library(rvest)
 library(httr)
+library(forcats)
+library(stringr)
+library(ggplot2)
 ```
 
-Problem 1
+## Problem 1
 
 Subway stations in NYC have multiple entrances; data on this page contains information on the entrances for each station.
 
 Using the State of New York API, read the complete dataset using functions in httr. By default, the API will return only the first 1000 entries, so using the GET option query = list(`$limit` = 2000) in your request will be useful.
-
-```{r}
-
-```
-
 
 After you’ve read the data, clean it up: retain variables on station name, entrance latitude and longitude, East/West street, North/South street, and corner.
 
@@ -32,6 +32,109 @@ Make a plot showing the number of entrances for each subway station. Restrict yo
 
 Overall (not only in stations that have more than 10 entrances), how many subway station names contain the abbreviation “St”? How many end with “St”?
 
+```{r reading_in_subway}
+sub_enter = GET("https://data.ny.gov/resource/hvwh-qtfg.json", query = list(`$limit` = 2000)) %>%
+  content("text") %>%
+  jsonlite::fromJSON() #whats it doing? why do I not need as_tibble()?
+```
+
+I have read in the dataset for information on the entrances for each station in NYC using the State of New York API. Next, I will clean the variable names and retain only the needed variables.
+
+```{r clean_subway}
+sub_enter = 
+sub_enter %>%
+clean_names() %>%
+  select(station_name, entrance_latitude, entrance_longitude, east_west_street, north_south_street, corner)
+```
+
+```{r plot_subway}
+number_of_entrances =
+sub_enter %>%
+  group_by(station_name) %>%
+  summarize(number_of_entrances = n())
+
+left_join(sub_enter, number_of_entrances) %>%
+  filter(number_of_entrances > 10) %>%
+  mutate(station_name = fct_reorder(station_name, number_of_entrances)) %>%
+  ggplot(aes(x = station_name, y = number_of_entrances)) +
+  geom_point()
+
+```
+
+```{r find_st}
+sub_enter %>%
+  filter(str_detect(station_name, "St")) %>% 
+  group_by(station_name) %>%
+  distinct(station_name) %>%
+  nrow()
+
+sub_enter %>%
+  filter(str_detect(station_name, "St$")) %>%
+  group_by(station_name) %>%
+  distinct(station_name) %>%
+  nrow()
+```
+There are 176 number of subway stations that has St in their name and the number of stations that had a name which ended with St were 148.
+
+## Problem 2
+
+I’m curious about how many people watched each episode of “Game of Thrones” over the past 7 seasons. Find these data online and import them into R using functions in rvest. Taking the time to find data that’s pretty close to the format you want is worth a bit of effort; wikipedia is a good place to start.
+
+After you’ve found and read the data, make sure they’re tidy. In your final dataset, include variables for season, episode, and viewers; also create a unique episode ID of the form SX_EYY where X and Y are season or episode numbers.
+
+Make a plot that shows the number of viewers for each episode of each season.
+
+Make a boxplot of the number of viewers for each episode of each season.
+
+Fit a linear model that treats number of viewers in each episode as a response and season as a categorical predictor; make season 4 the reference season. Present and discuss the results of your modeling.
+
+```{r scrape_got_html}
+url = "https://en.wikipedia.org/wiki/Template:Game_of_Thrones_ratings"
+got_table = (read_html(url) %>%
+  html_nodes("table"))[[1]] %>%
+  html_table()
+# Deleting the unwanted columns
+got_table =  got_table[,c(-1,-13)]
+```   
+
+Now that I have read in the ratings for each episode of Game of Thrones over the last seven seasons, I will tidy up the data and make it into a long format from its original wide format.
+
+```{r tidy_got_data}
+got_table =   
+  got_table %>%
+  clean_names() %>%
+  gather(key = episode, value = viewers, ep_1 : ep_10)
+  
+# unique episode id
+got_table = 
+got_table %>%
+  mutate(id = str_c("S", str_sub(season,1),"_E", str_sub(episode, 4, 5)))
+```
+
+I have also added an id variable having values in the form of X_EYY where X and Y are season or episode numbers.
+
+```{r plot_got_viewers}
+got_table %>%
+  ggplot(aes(x = id, y = viewers)) +
+  geom_point()
+
+got_table %>%
+  ggplot(aes(x = id, y = viewers)) +
+  geom_boxplot()
+# both plots right???
+```
+
+```{r lm_got}
+got_table %>%
+  mutate(season = factor(season),
+         season = relevel(season, ref = 4)) %>%
+  lm(viewers ~ season, data = .) %>%
+  broom :: tidy() %>%
+  knitr::kable(digits = 3)
+
+# Error
+# Error in lm.fit(x, y, offset = offset, singular.ok = singular.ok, ...) : NA/NaN/Inf in 'y'
+```
 
 ## R Markdown
 
