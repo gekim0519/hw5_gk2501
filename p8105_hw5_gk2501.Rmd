@@ -1,0 +1,54 @@
+---
+title: "p8105_hw5_ajg2202"
+author: "Gaeun Kim"
+date: "11/4/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r downloading packages}
+library(tidyverse)
+library(rvest)
+library(httr)
+```
+
+Problem 1
+
+Subway stations in NYC have multiple entrances; data on this page contains information on the entrances for each station.
+
+Using the State of New York API, read the complete dataset using functions in httr. By default, the API will return only the first 1000 entries, so using the GET option query = list(`$limit` = 2000) in your request will be useful.
+
+```{r}
+
+```
+
+
+After you’ve read the data, clean it up: retain variables on station name, entrance latitude and longitude, East/West street, North/South street, and corner.
+
+Make a plot showing the number of entrances for each subway station. Restrict your plot to stations that have more than 10 entrances, and order stations according to the number of entrances.
+
+Overall (not only in stations that have more than 10 entrances), how many subway station names contain the abbreviation “St”? How many end with “St”?
+
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
